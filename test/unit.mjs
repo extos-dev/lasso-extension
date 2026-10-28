@@ -317,6 +317,74 @@ await t('inspect can extract a reading pane inside a dialog', async () => {
   assert.ok(!md.includes('COOKIETEXT'), md);
 });
 
+await t('locator set builder generates ordered strategies and signature', async () => {
+  const w = await load('<body><main><article id="main-art" class="post-card _hash123"><h1 data-testid="art-title">Title</h1></article></main></body>');
+  w.Lasso.inspect.start();
+  const snap = w.Lasso.inspect.snapshot();
+  const artId = inspectId(w, '#main-art');
+  const locSet = w.Lasso.locator.build(snap, artId);
+  assert.ok(locSet.strategies.some((s) => s.type === 'semantic' && s.value === 'article'));
+  assert.ok(locSet.strategies.some((s) => s.type === 'id' && s.value === '#main-art'));
+  assert.ok(locSet.strategies.some((s) => s.type === 'css_class' && s.value === 'article.post-card'));
+  assert.ok(locSet.signature.tag === 'ARTICLE');
+  const res = w.Lasso.locator.resolve(snap, locSet);
+  assert.equal(res.matched, true);
+  assert.equal(res.nodeId, artId);
+  assert.equal(res.health, 'healthy');
+});
+
+await t('locator resolver uses fallback strategies when attributes change', async () => {
+  const w1 = await load('<body><div id="target" class="card-item">Item</div></body>');
+  w1.Lasso.inspect.start();
+  const snap1 = w1.Lasso.inspect.snapshot();
+  const id1 = inspectId(w1, '#target');
+  const locSet = w1.Lasso.locator.build(snap1, id1);
+
+  // Mutate ID on new DOM document
+  const w2 = await load('<body><div id="changed-id" class="card-item">Item</div></body>');
+  w2.Lasso.inspect.start();
+  const snap2 = w2.Lasso.inspect.snapshot();
+  const resFallback = w2.Lasso.locator.resolve(snap2, locSet);
+  assert.equal(resFallback.matched, true);
+  assert.equal(resFallback.health, 'degraded');
+  assert.match(resFallback.reason, /fallback/);
+});
+
+await t('schema validator validates schema shape and rejects invalid schema', () => {
+  assert.equal(L.schema.validate(null).valid, false);
+  assert.equal(L.schema.validate({ schemaVersion: 2 }).valid, false);
+  const ok = L.schema.validate({
+    schemaVersion: 1, id: 's1', name: 'Test',
+    match: { domain: 'test.com' }, kind: 'article',
+    container: { strategies: [{ type: 'semantic', value: 'article' }] }
+  });
+  assert.equal(ok.valid, true);
+});
+
+await t('schema URL matcher ranks exact path over domain match', () => {
+  const sDomain = { match: { domain: 'example.com' } };
+  const sPath = { match: { domain: 'example.com', pathPattern: '/blog/*' } };
+  assert.equal(L.schema.matchUrl(sDomain, 'https://example.com/blog/p1').score, 1);
+  assert.equal(L.schema.matchUrl(sPath, 'https://example.com/blog/p1').score, 2);
+  assert.equal(L.schema.matchUrl(sPath, 'https://example.com/about').matches, false);
+});
+
+await t('schema runner replays schema and evaluates health', async () => {
+  const w = await load(fs.readFileSync(path.join(here, 'fixtures/article-semantic.html'), 'utf8'));
+  w.Lasso.inspect.start();
+  const snap = w.Lasso.inspect.snapshot();
+  const artId = inspectId(w, 'article');
+  const locSet = w.Lasso.locator.build(snap, artId);
+  const schema = {
+    schemaVersion: 1, id: 'art_s1', name: 'Article Schema',
+    match: { domain: '127.0.0.1' }, kind: 'article', container: locSet
+  };
+  const runRes = w.Lasso.schema.run(snap, schema);
+  assert.equal(runRes.ok, true);
+  assert.equal(runRes.health, 'healthy');
+  assert.equal(runRes.data.kind, 'article');
+});
+
 await t('inspect contact ignores hidden and aria-hidden details', async () => {
   const w = await load('<body><footer id="f"><h2>Contact</h2><h3>Acme Studio</h3>' +
     '<a href="mailto:hello@acme.test">hello@acme.test</a>' +
