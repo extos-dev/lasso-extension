@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lasso</title>
+  <link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header id="hdr">
+    <div class="site">
+      <img id="favicon" alt="" width="20" height="20">
+      <div class="site-text"><div id="siteName" class="site-name">Lasso</div><div id="siteMeta" class="muted">Open a web page, then click Inspect.</div></div>
+    </div>
+    <button id="inspectToggle" class="inspect-toggle" type="button" aria-pressed="false" title="Inspect the active page">
+      <span class="inspect-ico" aria-hidden="true"></span><span id="inspectLabel">Inspect</span>
+    </button>
+  </header>
+  <nav id="tabs" role="tablist">
+    <button role="tab" data-view="page" aria-selected="true">Page</button>
+    <button role="tab" data-view="map" aria-selected="false">Map</button>
+    <button role="tab" data-view="output" aria-selected="false">Output</button>
+  </nav>
+  <div id="notice" class="notice" hidden></div>
+  <main>
+    <section id="view-page"></section>
+    <section id="view-map" hidden></section>
+    <section id="view-output" hidden></section>
+  </main>
+  <script type="module" src="panel.js"></script>
+</body>
+</html>

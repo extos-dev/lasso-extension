@@ -1,0 +1,164 @@
+{
+  "article-semantic": {
+    "pageKind": "article",
+    "regions": [
+      {
+        "kind": "article",
+        "title": "Counting the Tide",
+        "author": "Marta Quill",
+        "mustContain": [
+          "The numbers",
+          "Patience was the scarce resource",
+          "## The cooperative",
+          "](https://example.test/lessons/one) [Lesson card two]",
+          "```js\nfunction tide() {\n  return 1;\n}\n```",
+          "  - Inner lesson one"
+        ],
+        "mustNotContain": [
+          "FOOTERTEXT",
+          "Related story one"
+        ]
+      }
+    ]
+  },
+  "article-divsoup": {
+    "pageKind": "article",
+    "regions": [
+      {
+        "kind": "article",
+        "mustContain": [
+          "harbor town woke slowly"
+        ],
+        "mustNotContain": [
+          "FOOTERTEXT"
+        ]
+      }
+    ]
+  },
+  "article-banner-hidden": {
+    "pageKind": "article",
+    "regions": [
+      {
+        "kind": "article",
+        "mustContain": [
+          "Quiet Infrastructure",
+          "VISIBLECHILD"
+        ],
+        "mustNotContain": [
+          "HIDDENDUP",
+          "HIDDENOPACITY",
+          "HIDDENCONTENT",
+          "HIDDENVIS",
+          "Accept all cookies",
+          "FOOTERTEXT"
+        ]
+      }
+    ]
+  },
+  "article-modal": {
+    "pageKind": "article",
+    "regions": [
+      {
+        "kind": "article",
+        "title": "When the Modal Opens",
+        "mustContain": [
+          "The hidden page",
+          "harbor town woke slowly"
+        ],
+        "mustNotContain": [
+          "FOOTERTEXT"
+        ]
+      }
+    ]
+  },
+  "table-semantic": {
+    "regions": [
+      {
+        "kind": "table",
+        "rows": 8,
+        "cols": 4,
+        "mustContain": [
+          "Region 3",
+          "Revenue"
+        ],
+        "mustNotContain": [
+          "FOOTERTEXT"
+        ]
+      }
+    ]
+  },
+  "table-in-article": {
+    "regions": [
+      {
+        "kind": "article",
+        "mustContain": [
+          "| Year | Cost | Saved |"
+        ]
+      },
+      {
+        "kind": "table",
+        "rows": 3,
+        "cols": 3,
+        "nestedIn": "article"
+      }
+    ]
+  },
+  "aria-grid": {
+    "regions": [
+      {
+        "kind": "table",
+        "rows": 7,
+        "cols": 3,
+        "mustContain": [
+          "Player4"
+        ]
+      }
+    ]
+  },
+  "grid-products": {
+    "pageKind": "listing",
+    "regions": [
+      {
+        "kind": "record_list",
+        "count": 12,
+        "flavor": "product",
+        "mustContain": [
+          "Product Name 5",
+          "$50.99"
+        ]
+      }
+    ]
+  },
+  "blog-index": {
+    "pageKind": "listing",
+    "regions": [
+      {
+        "kind": "record_list",
+        "count": 8,
+        "mustContain": [
+          "Post number 4"
+        ]
+      }
+    ],
+    "forbidKinds": [
+      "article"
+    ]
+  },
+  "login": {
+    "pageKind": "login",
+    "regions": [],
+    "forbidKinds": [
+      "article",
+      "table",
+      "record_list"
+    ]
+  },
+  "landing": {
+    "pageKind": "landing",
+    "regions": [],
+    "forbidKinds": [
+      "article",
+      "table"
+    ]
+  }
+}

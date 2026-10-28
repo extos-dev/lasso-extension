@@ -1,0 +1,19 @@
+// Engine files injected into the page, in order. Add new engine modules here (a unit test checks this list matches src/content/).
+export const CONTENT_FILES = [
+  'src/content/00-namespace.js',
+  'src/content/10-snapshot.js',
+  'src/content/20-segment.js',
+  'src/content/30-detect-article.js',
+  'src/content/31-detect-table.js',
+  'src/content/32-detect-records.js',
+  'src/content/35-inspect.js',
+  'src/content/36-pattern-chat.js',
+  'src/content/37-pattern-contact.js',
+  'src/content/39-scan.js',
+  'src/content/40-arbitrate.js',
+  'src/content/50-classify.js',
+  'src/content/60-output.js',
+  'src/content/70-overlay.js',
+  'src/content/80-pipeline.js',
+  'src/content/90-bridge.js',
+];
