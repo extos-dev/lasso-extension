@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { compilePathPattern, validateRecipe } from '../src/shared/recipe.js';
+import { JSDOM } from 'jsdom';
+import fs from 'node:fs';
+import { validateRecipe, compilePathPattern } from '../src/shared/recipe.js';
 
 const recipe = validateRecipe({
   id: 'products', name: 'Products', kind: 'record_list',
@@ -18,4 +20,15 @@ assert.equal(compilePathPattern('/a.b/*').test('/a.b/x'), true);
 assert.equal(compilePathPattern('/a.b/*').test('/axb/x'), false);
 assert.throws(() => validateRecipe({ id: 'bad id', match: { domain: 'example.test' } }));
 assert.throws(() => validateRecipe({ id: 'x', match: { domain: 'example.test' }, fields: [{ key: 'unknown', selector: '.x' }] }));
+
+const dom = new JSDOM(`<!doctype html><main class="catalog"><article class="product"><h2 class="title">Alpha</h2><a href="/alpha">Open</a></article><article class="product"><h2 class="title">Beta</h2><a href="/beta">Open</a></article></main>`);
+globalThis.document = dom.window.document;
+globalThis.Lasso = {};
+const replaySource = fs.readFileSync(new URL('../src/content/45-recipe-replay.js', import.meta.url), 'utf8');
+Function(replaySource)();
+const result = globalThis.Lasso.recipe.run(recipe);
+assert.equal(result.health, 'healthy');
+assert.equal(result.itemCount, 2);
+assert.equal(result.items[0].title, 'Alpha');
+assert.equal(result.items[0].url, 'https://example.test/alpha');
 console.log('recipe: 1 passed');
