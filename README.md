@@ -1,6 +1,6 @@
 # Lasso — Page Data Extractor (Chrome extension)
 
-> **Direction — 2026-10-26 (Milestone A implemented):** the UX is **inspect-first** — point at any part of a page, pick a pattern, configure/save the recipe (Milestone B), replay with one click. The default panel is inspect-first; the old Phase 0 auto-detect flow is retained only for fixtures and the paused e2e harness. Read `docs/VISION.md` before contributing.
+> **Direction — 2026-10-26 (Milestone A implemented):** the UX is **inspect-first** — point at any part of a page, pick a pattern, configure/save the recipe (Milestone B), replay with one click. The default panel is inspect-first; the old Phase 0 auto-detect flow is retained only for fixtures and the paused legacy e2e harness. Read `docs/VISION.md` before contributing.
 
 **Teach a page once. Extract it forever. Nothing leaves your browser.**
 
@@ -11,7 +11,7 @@ Lasso lets you point at any part of a page and export it as clean **Markdown, JS
 - **No build step, no runtime dependencies:** plain JavaScript you can read in an afternoon.
 - **Measured, not assumed:** `npm run perf` times the engine in real Chromium at 1k/5k/25k nodes (see `docs/MASTER_SPEC.md` §12 for the current numbers, including the 25k main-thread budget Lasso still misses).
 
-> **Status: Milestone A.** `npm test` is green: 47 unit checks + 1 side-panel smoke + 11/11 automated fixture pages. `npm run test:inspect` builds `dist/` and passes 15/15 headless-Chromium scenarios (a 5-site public-web spot check also passed). The native-Chrome gate remains; use the checklist in `docs/BUILD_PLAN.md` §1.1.
+> **Status: Milestone A.** The local test suite covers unit, side-panel, and fixture checks. `npm run test:browser` builds `dist/` and runs the headless-Chromium inspect smoke suite. The native-Chrome gate remains; use the checklist in `docs/BUILD_PLAN.md` §1.1. The legacy `test/e2e.mjs` is not an active gate because it targets the retired Phase 0 UI.
 
 ## Install (developer mode)
 1. `chrome://extensions` → enable **Developer mode**.
@@ -42,11 +42,18 @@ Patterns are registered through `L.inspect.registerPattern`; a new pattern is a 
 ```bash
 npm install          # dev only: jsdom for tests
 npm test             # unit + side-panel smoke + fixture corpus
-npm run test:inspect # build dist/ and run the headless-Chromium inspect smoke
+npm run test:unit    # unit checks only
+npm run test:panel   # side-panel smoke only
+npm run test:fixtures # fixture corpus only
+npm run test:browser # build + headless-Chromium inspect smoke
+npm run test:all     # local suite plus browser smoke
 npm run perf         # engine timings at 1k/5k/25k nodes (measurement only)
 npm run build        # assemble the unpacked extension into dist/
 npm run fixtures     # regenerate fixtures (python3)
 ```
+
+GitHub Actions runs the local suite, build, and browser smoke checks on pushes and pull requests. The native Chrome checklist remains a manual release gate.
+
 After editing code: `chrome://extensions` → reload Lasso, reopen the panel, and start Inspect. Existing tabs can be re-injected without a page reload; a stale overlay host is removed on the next mount.
 
 ```
