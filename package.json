@@ -6,10 +6,11 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "test": "npm run test:unit && npm run test:panel && npm run test:fixtures",
+    "test": "npm run test:unit && npm run test:panel && npm run test:fixtures && npm run test:recipe",
     "test:unit": "node test/unit.mjs",
     "test:panel": "node test/panel.mjs",
     "test:fixtures": "node test/run-fixtures.mjs",
+    "test:recipe": "node test/recipe.mjs",
     "test:browser": "npm run build && node test/inspect-smoke.mjs",
     "test:all": "npm test && npm run test:browser",
     "test:inspect": "npm run test:browser",
