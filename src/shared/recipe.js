@@ -18,13 +18,17 @@ function selector(value, label) {
   if (typeof value !== 'string' || !value.trim() || value.length > MAX_SELECTOR) throw new Error(`${label} is invalid`);
   return value.trim();
 }
+function domain(value) {
+  if (typeof value !== 'string' || !value || value.length > MAX_DOMAIN || !/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i.test(value)) throw new Error('Recipe domain is invalid');
+  return value.toLowerCase();
+}
 export function validateRecipe(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error('Recipe must be an object');
   const id = recipeId(input.id);
   const name = typeof input.name === 'string' && input.name.trim() ? input.name.trim().slice(0, MAX_NAME) : id;
   const match = input.match && typeof input.match === 'object' ? input.match : {};
-  if (typeof match.domain !== 'string' || !match.domain || match.domain.length > MAX_DOMAIN || /[^a-z0-9.:-]/i.test(match.domain)) throw new Error('Recipe domain is invalid');
   const fields = Array.isArray(input.fields) ? input.fields : [];
+  if (!fields.length) throw new Error('Recipe needs at least one field');
   if (fields.length > MAX_FIELDS) throw new Error('Recipe has too many fields');
   const normalizedFields = fields.map((field) => {
     if (!field || typeof field !== 'object') throw new Error('Recipe field is invalid');
@@ -35,7 +39,7 @@ export function validateRecipe(input) {
   const recipe = {
     schemaVersion: 1, id, name,
     kind: typeof input.kind === 'string' && /^[a-z][a-z0-9_]{0,31}$/.test(input.kind) ? input.kind : 'record_list',
-    match: { domain: match.domain.toLowerCase(), pathPattern: normalizePathPattern(match.pathPattern || '/') },
+    match: { domain: domain(match.domain), pathPattern: normalizePathPattern(match.pathPattern || '/') },
     rootSelector: input.rootSelector ? selector(input.rootSelector, 'Recipe root selector') : '',
     itemSelector: input.itemSelector ? selector(input.itemSelector, 'Recipe item selector') : '',
     fields: normalizedFields,
