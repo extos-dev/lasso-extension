@@ -38,9 +38,9 @@ async function scenario(name, fn) {
 function check(name, fn) { try { fn(); } catch (e) { e.message = name + ': ' + e.message; throw e; } }
 try {
   context = await chromium.launchPersistentContext(profile, {
-    headless: true,
+    headless: false,
     executablePath: CHROME,
-    args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--no-first-run', '--no-default-browser-check', '--no-sandbox', '--disable-dev-shm-usage'],
+    args: [`--disable-extensions-except=${EXT}`, `--load-extension=${EXT}`, '--headless=new', '--no-first-run', '--no-default-browser-check', '--no-sandbox', '--disable-dev-shm-usage'],
     viewport: { width: 1280, height: 900 }, acceptDownloads: true,
   });
   const sw = context.serviceWorkers()[0] || await context.waitForEvent('serviceworker', {timeout: 15000});
@@ -95,6 +95,22 @@ try {
     await target.bringToFront();
     await target.mouse.click(box.x + Math.min(20, box.width/2), box.y + Math.min(20, box.height/2));
     await panel.waitForSelector('#view-map .sel-card', {timeout:10000});
+  }
+
+  async function clickMenuPattern(patternName) {
+    await target.evaluate((pName) => {
+      const host = document.querySelector('[data-lasso-overlay]');
+      if (!host || !host.shadowRoot) return;
+      const inputs = host.shadowRoot.querySelectorAll('input[type="checkbox"]');
+      for (const input of inputs) {
+        const label = input.closest('label');
+        if (label && label.textContent.includes(patternName)) {
+          if (!input.checked) input.click();
+        }
+      }
+      const detectBtn = host.shadowRoot.querySelector('.mdetect');
+      if (detectBtn) detectBtn.click();
+    }, patternName);
   }
   async function getOutText() {
     return panel.evaluate(() => {
@@ -362,7 +378,7 @@ try {
     await target.mouse.click(h.x + 5, h.y + 5, {button:'right'});
     await target.waitForTimeout(100);
     await target.keyboard.press('Space'); // focused first checkbox: Article; Text must uncheck
-    for (let i = 0; i < 6; i++) await target.keyboard.press('Tab'); // ... Text, Detect selected
+    for (let i = 0; i < 7; i++) await target.keyboard.press('Tab'); // Article -> Table -> Chat -> List -> Contact -> Text -> Set as scan parent -> Detect selected
     await target.keyboard.press('Enter');
     await panel.waitForSelector('#view-map .result-card', {timeout:10000});
     assert.match(await panel.locator('#view-map .result-card').innerText(), /Article/);
@@ -412,7 +428,7 @@ try {
     await selectByLocator('h1');
     await target.bringToFront();
     await target.keyboard.press('Shift+F10');
-    for (let i = 0; i < 6; i++) await target.keyboard.press('Tab');
+    for (let i = 0; i < 7; i++) await target.keyboard.press('Tab');
     await target.keyboard.press('Enter'); // Detect selected (Text default)
     await target.waitForTimeout(150);
     await target.keyboard.press('Enter'); // Send to Output

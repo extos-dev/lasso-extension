@@ -97,20 +97,17 @@
     const start = get(startId);
     if (!start) return { ok: false, reason: 'element not found' };
     let target = null;
-    if (!opts.scoped) {
-      // An <article> ancestor genuinely contains the selection, so climbing to it
-      // is in scope. <main> is only a page wrapper: never climb to it and then
-      // extract a sibling <article> from elsewhere in the page.
-      for (let p = start; p; p = parentOf(p)) {
-        if (p.tag === 'ARTICLE' || p.role === 'article') { target = p; break; }
-      }
-      if (!target) {
-        // If the selection itself (or a wrapper inside it) contains an article,
-        // use that contained article. Otherwise process only the selected subtree.
+    // An <article> ancestor genuinely contains the selection, so climbing to it
+    // is in scope. <main> is only a page wrapper: never climb to it.
+    for (let p = start; p; p = parentOf(p)) {
+      if (p.tag === 'ARTICLE' || p.role === 'article') { target = p; break; }
+    }
+    if (!target) {
+      if (!opts.scoped) {
         target = bestDescendant(start, (n) => n.tag === 'ARTICLE' || n.role === 'article') || start;
+      } else {
+        target = start;
       }
-    } else {
-      target = start;
     }
     const pr = prose(target);
     const h = L.articleHints ? L.articleHints(state.snap, target, { scoped: true }) : {};
@@ -123,15 +120,10 @@
     const start = get(startId);
     if (!start) return { ok: false, reason: 'element not found' };
     let target = null;
-    if (!opts.scoped) {
-      for (let p = start; p; p = parentOf(p)) {
-        if (p.tag === 'TABLE' || p.role === 'grid' || p.role === 'table') { target = p; break; }
-      }
-      if (!target) target = bestDescendant(start, (n) => n.tag === 'TABLE' || n.role === 'grid' || n.role === 'table');
-    } else {
-      if (start.tag === 'TABLE' || start.role === 'grid' || start.role === 'table') target = start;
-      else target = bestDescendant(start, (n) => n.tag === 'TABLE' || n.role === 'grid' || n.role === 'table');
+    for (let p = start; p; p = parentOf(p)) {
+      if (p.tag === 'TABLE' || p.role === 'grid' || p.role === 'table') { target = p; break; }
     }
+    if (!target) target = bestDescendant(start, (n) => n.tag === 'TABLE' || n.role === 'grid' || n.role === 'table');
     if (!target) return { ok: false, reason: 'no table in this selection' };
     if (target.role === 'presentation' || target.role === 'none') return { ok: false, reason: 'presentation table' };
     let t;
@@ -153,29 +145,14 @@
       const g = L.segment.groupForParent(state.snap, p, force ? 2 : 3);
       if (g) groups.push({ ...g, forced: force });
     };
-    // If scoped mode (user explicitly chose this container), search only inside it
-    if (opts.scoped) {
-      // Try the start itself first
-      tryParent(start, true);
-      // Look for groups within the start's subtree
-      let walked = 0;
-      L.walk(state.snap, start.id, (n) => {
-        if (walked++ > 500) return false;
-        if (n === start) return;
-        if (n.children && n.children.length >= 2) {
-          tryParent(n, true);
-        }
-      });
-    } else {
-      // Original behavior: climb up a bit, look around
-      let p = start;
-      for (let i = 0; i < 4 && p; i++) { tryParent(p, i === 0); p = parentOf(p); }
-      let walked = 0;
-      L.walk(state.snap, start.id, (n) => {
-        if (walked++ > 300) return false;
-        if (n !== start && n.children.length >= 3) tryParent(n);
-      });
-    }
+    // Try the start and its immediate parents
+    let p = start;
+    for (let i = 0; i < 4 && p; i++) { tryParent(p, opts.scoped || i === 0); p = parentOf(p); }
+    let walked = 0;
+    L.walk(state.snap, start.id, (n) => {
+      if (walked++ > 500) return false;
+      if (n !== start && n.children.length >= (opts.scoped ? 2 : 3)) tryParent(n, opts.scoped);
+    });
     if (!groups.length) return { ok: false, reason: 'no repeated items in this selection' };
     const rank = (g) => {
       const rich = Math.max(g.fields.link, g.fields.image, g.fields.heading);
