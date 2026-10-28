@@ -13,11 +13,14 @@
   };
   const run = (recipe) => {
     if (!recipe || recipe.schemaVersion !== 1 || !Array.isArray(recipe.fields) || !recipe.fields.length) throw new Error('Recipe is invalid or unsupported');
-    const root = recipe.rootSelector ? document.querySelector(recipe.rootSelector) : document.body;
-    if (!root) return { ok: false, health: 'root-missing', items: [], errors: ['The recipe root was not found'] };
+    let root = document.body;
+    if (recipe.rootSelector) {
+      try { root = document.querySelector(recipe.rootSelector); } catch (_) { root = null; }
+    }
+    if (!root) return { ok: false, health: 'root-missing', items: [], errors: ['The recipe root was not found or selector is invalid'] };
     let candidates = [];
     if (recipe.itemSelector) {
-      try { candidates = [...root.querySelectorAll(recipe.itemSelector)].slice(0, MAX_ITEMS); } catch { candidates = []; }
+      try { candidates = [...root.querySelectorAll(recipe.itemSelector)].slice(0, MAX_ITEMS); } catch (_) { candidates = []; }
     } else candidates = [...root.children].slice(0, MAX_ITEMS);
     const errors = [], items = [];
     for (const item of candidates) {
