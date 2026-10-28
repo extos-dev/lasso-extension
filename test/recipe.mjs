@@ -21,7 +21,7 @@ assert.equal(compilePathPattern('/a.b/*').test('/axb/x'), false);
 assert.throws(() => validateRecipe({ id: 'bad id', match: { domain: 'example.test' } }));
 assert.throws(() => validateRecipe({ id: 'x', match: { domain: 'example.test' }, fields: [{ key: 'unknown', selector: '.x' }] }));
 
-const dom = new JSDOM(`<!doctype html><main class="catalog"><article class="product"><h2 class="title">Alpha</h2><a href="/alpha">Open</a></article><article class="product"><h2 class="title">Beta</h2><a href="/beta">Open</a></article></main>`);
+const dom = new JSDOM(`<!doctype html><main class="catalog"><article class="product"><h2 class="title">Alpha</h2><a href="/alpha">Open</a></article><article class="product"><h2 class="title">Beta</h2><a href="/beta">Open</a></article></main>`, { url: 'https://example.test/products/1' });
 globalThis.document = dom.window.document;
 globalThis.Lasso = {};
 const replaySource = fs.readFileSync(new URL('../src/content/45-recipe-replay.js', import.meta.url), 'utf8');
