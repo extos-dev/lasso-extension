@@ -12,13 +12,13 @@
   };
   const run = (recipe) => {
     if (!recipe || !Array.isArray(recipe.fields) || !recipe.fields.length) throw new Error('Recipe has no fields');
-    const root = recipe.match && recipe.match.rootSelector ? document.querySelector(recipe.match.rootSelector) : document.body;
+    const root = recipe.rootSelector ? document.querySelector(recipe.rootSelector) : document.body;
     if (!root) return { ok: false, health: 'root-missing', items: [], errors: ['The recipe root was not found'] };
-    const selectors = recipe.itemSelector ? [recipe.itemSelector] : [':scope > *'];
     let candidates = [];
-    for (const selector of selectors) {
-      try { candidates = [...root.querySelectorAll(selector)].slice(0, MAX_ITEMS); } catch { candidates = []; }
-      if (candidates.length) break;
+    if (recipe.itemSelector) {
+      try { candidates = [...root.querySelectorAll(recipe.itemSelector)].slice(0, MAX_ITEMS); } catch { candidates = []; }
+    } else {
+      candidates = [...root.children].slice(0, MAX_ITEMS);
     }
     const errors = [], items = [];
     for (const item of candidates) {
