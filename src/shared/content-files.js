@@ -11,6 +11,7 @@ export const CONTENT_FILES = [
   'src/content/37-pattern-contact.js',
   'src/content/39-scan.js',
   'src/content/40-arbitrate.js',
+  'src/content/44-locator.js',
   'src/content/45-recipe-replay.js',
   'src/content/50-classify.js',
   'src/content/60-output.js',
