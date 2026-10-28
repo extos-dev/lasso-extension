@@ -1,4 +1,4 @@
-// Engine files injected into the page, in order. Add new engine modules here (a unit test checks this list matches src/content/).
+// Engine files injected into the page, in order. Add new engine modules here.
 export const CONTENT_FILES = [
   'src/content/00-namespace.js',
   'src/content/10-snapshot.js',
@@ -11,6 +11,7 @@ export const CONTENT_FILES = [
   'src/content/37-pattern-contact.js',
   'src/content/39-scan.js',
   'src/content/40-arbitrate.js',
+  'src/content/45-recipe-replay.js',
   'src/content/50-classify.js',
   'src/content/60-output.js',
   'src/content/70-overlay.js',
