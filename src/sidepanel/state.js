@@ -6,6 +6,7 @@ export const state = {
   patterns: [], patternsReady: false, catalog: [], patternPick: ['text'], results: [], outputItems: [], expandedResults: [], result: null, rendered: null,
   format: 'markdown', bom: true, busy: false, error: null, view: 'page',
   pageSiteType: null, pageRecipes: [], pageScanResults: [], pageScanItems: [], pageScanExpanded: [], pageScanBusy: false, pageScanFormat: 'markdown',
+  recipeResult: null, recipeBusy: false,
   scanScope: null,
   scanPatterns: ['article', 'table', 'list', 'text'],
 };
