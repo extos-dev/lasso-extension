@@ -1,12 +1,8 @@
-/* Bridge: message API between the side panel and the engine. All messages carry {lasso:true, type}. */
+/* Bridge: message API between the side panel and the engine. */
 (() => {
   const L = globalThis.Lasso;
-  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.onMessage) return; // tests / non-extension contexts
+  if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.onMessage) return;
   if (globalThis.__lassoListener) chrome.runtime.onMessage.removeListener(globalThis.__lassoListener);
-
-  // Inspect-only surface. The Phase 0 pipeline (L.analyze / L.output.render) is
-  // called directly by the fixture harness, not over messages: there is no panel
-  // sender for it any more, so no ANALYZE/RENDER/SELECT/OVERLAY/FORMATS handler.
   const handlers = {
     PING: () => ({ ok: true, version: L.version }),
     LIGHT: () => L.light(document),
@@ -23,8 +19,8 @@
     SCAN_RUN: (m) => (L.scan ? L.scan.run(m || {}) : L.inspect.scanAll(m && m.patterns)),
     INSPECT_RENDER: (m) => L.output.renderInspect(m.format),
     INSPECT_RENDER_ALL: (m) => L.output.renderInspectResults(m.format, m.results),
+    RECIPE_RUN: (m) => L.recipe.run(m.recipe),
   };
-
   globalThis.__lassoListener = (msg, _sender, send) => {
     if (!msg || msg.lasso !== true || !handlers[msg.type]) return false;
     Promise.resolve().then(() => handlers[msg.type](msg)).then((r) => send({ ok: true, data: r }), (e) => send({ ok: false, error: String((e && e.message) || e) }));
