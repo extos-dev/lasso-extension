@@ -3,3 +3,4 @@ dist/
 test/artifacts/
 *.zip
 .DS_Store
+.env
