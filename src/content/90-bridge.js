@@ -23,6 +23,17 @@
     SCAN_RUN: (m) => (L.scan ? L.scan.run(m || {}) : L.inspect.scanAll(m && m.patterns)),
     INSPECT_RENDER: (m) => L.output.renderInspect(m.format),
     INSPECT_RENDER_ALL: (m) => L.output.renderInspectResults(m.format, m.results),
+    SCHEMA_BUILD: (m) => {
+      const snap = L.inspect.snapshot();
+      if (!snap || m.nodeId == null) return { ok: false, error: 'No snapshot or nodeId' };
+      const container = L.locator ? L.locator.build(snap, m.nodeId) : {};
+      return { ok: true, container };
+    },
+    SCHEMA_RUN: (m) => {
+      const snap = L.inspect.isActive() ? L.inspect.snapshot() : L.snapshot(document);
+      if (!snap) return { ok: false, error: 'Failed to snapshot document' };
+      return L.schema ? L.schema.run(snap, m.schema) : { ok: false, error: 'Schema module not loaded' };
+    },
   };
 
   globalThis.__lassoListener = (msg, _sender, send) => {

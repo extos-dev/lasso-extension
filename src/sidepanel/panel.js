@@ -160,7 +160,13 @@ async function stage0() {
     if (my !== gen) return;
     const prior = await bg('SITE_GET', { hostname: light.hostname });
     if (my !== gen) return;
-    set({ light, site: prior, wasFirstVisit: !prior, pageSiteType: light.siteName || light.hostname });
+    let pageRecipes = [];
+    try {
+      const matchRes = await bg('SCHEMA_MATCH', { url: tab.url });
+      pageRecipes = matchRes || [];
+    } catch (_) {}
+    if (my !== gen) return;
+    set({ light, site: prior, wasFirstVisit: !prior, pageSiteType: light.siteName || light.hostname, pageRecipes });
 
     let st = null;
     try { st = await send(tab.id, 'INSPECT_STATE'); } catch (_) { st = null; }
@@ -372,26 +378,59 @@ async function sendToOutput() {
 }
 
 async function saveSchema() {
-  if (!state.result) return;
+  if (!state.result || !state.tab) return;
+  const tabId = state.tab.id;
   try {
+    let container = {};
+    if (state.selectedId !== null && state.selectedId !== undefined) {
+      const buildRes = await send(tabId, 'SCHEMA_BUILD', { nodeId: state.selectedId });
+      if (buildRes && buildRes.container) container = buildRes.container;
+    }
     const id = 'schema_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
     const hostname = state.light?.hostname || '';
     const schema = {
       schemaVersion: 1,
       id,
-      name: state.result.label || (state.result.kind + ' from ' + hostname),
+      name: (state.result.kind ? state.result.kind.charAt(0).toUpperCase() + state.result.kind.slice(1) : 'Recipe') + ' (' + hostname + ')',
       origin: 'manual',
-      match: { domain: hostname, pageKind: state.result.kind },
-      kind: state.result.kind,
-      container: state.selectedId ? { nodeId: state.selectedId } : {},
+      match: { domain: hostname, pathPattern: state.tab.url ? new URL(state.tab.url).pathname : '' },
+      kind: state.result.kind || 'text',
+      container,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
     await bg('SCHEMA_SAVE', { schema });
     notice('Schema saved.');
     setTimeout(() => notice(null), 2000);
+    stage0();
   } catch (e) {
     notice('Failed to save schema: ' + friendly(e));
+  }
+}
+
+async function runRecipe(recipe) {
+  if (!state.tab) return;
+  const tabId = state.tab.id;
+  set({ busy: true });
+  notice(null);
+  try {
+    await ensureEngine(tabId);
+    const schema = await bg('SCHEMA_GET', { id: recipe.id });
+    if (!schema) throw new Error('Schema not found');
+    const res = await send(tabId, 'SCHEMA_RUN', { schema });
+    if (!res.ok) throw new Error(res.reason || 'Extraction failed');
+    set({
+      result: { pattern: schema.kind, ...res.data },
+      view: 'output',
+      rendered: null,
+      busy: false,
+    });
+    await render();
+    notice(`Recipe replayed (${res.health}).`);
+    setTimeout(() => notice(null), 2000);
+  } catch (e) {
+    set({ busy: false });
+    notice('Failed to run recipe: ' + friendly(e));
   }
 }
 
@@ -523,6 +562,7 @@ const actions = {
   changePatterns: () => changePatterns(),
   sendToOutput: () => sendToOutput(),
   saveSchema: () => saveSchema(),
+  runRecipe: (recipe) => runRecipe(recipe),
   toggleResult: (pattern) => {
     const cur = state.expandedResults.slice();
     const i = cur.indexOf(pattern);
