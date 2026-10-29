@@ -25,9 +25,9 @@
     INSPECT_RENDER_ALL: (m) => L.output.renderInspectResults(m.format, m.results),
     SCHEMA_BUILD: (m) => {
       const snap = L.inspect.snapshot();
-      if (!snap || m.nodeId == null) return { ok: false, error: 'No snapshot or nodeId' };
-      const container = L.locator ? L.locator.build(snap, m.nodeId) : {};
-      return { ok: true, container };
+      if (!snap || m.nodeId == null || !m.result) return { ok: false, error: 'No snapshot or result' };
+      const schema = L.schema ? L.schema.buildSchemaFromResult(snap, m.nodeId, m.result, m.meta || {}) : {};
+      return { ok: true, schema };
     },
     SCHEMA_RUN: (m) => {
       const snap = L.inspect.isActive() ? L.inspect.snapshot() : L.snapshot(document);

@@ -350,6 +350,23 @@ await t('locator resolver uses fallback strategies when attributes change', asyn
   assert.match(resFallback.reason, /fallback/);
 });
 
+await t('locator signature verification distinguishes between multiple semantic regions', async () => {
+  const w = await load('<body><main>' +
+    '<article><h1>First Article</h1><p>Unique content for first story in newspaper.</p></article>' +
+    '<article><h1>Second Article</h1><p>Unique content for second story in newspaper.</p></article>' +
+    '</main></body>');
+  w.Lasso.inspect.start();
+  const snap = w.Lasso.inspect.snapshot();
+  const secondArtEl = w.document.querySelectorAll('article')[1];
+  const secondArtNode = snap.byEl.get(secondArtEl);
+
+  const locSetSecond = w.Lasso.locator.build(snap, secondArtNode.id);
+  const resolved = w.Lasso.locator.resolve(snap, locSetSecond);
+
+  assert.equal(resolved.matched, true);
+  assert.equal(resolved.nodeId, secondArtNode.id);
+});
+
 await t('schema validator validates schema shape and rejects invalid schema', () => {
   assert.equal(L.schema.validate(null).valid, false);
   assert.equal(L.schema.validate({ schemaVersion: 2 }).valid, false);
@@ -369,11 +386,21 @@ await t('schema URL matcher ranks exact path over domain match', () => {
   assert.equal(L.schema.matchUrl(sPath, 'https://example.com/about').matches, false);
 });
 
-await t('applyFieldTransforms applies trim, currency, date, and regex replacement', () => {
+await t('applyFieldTransforms parses 1,234.56 currency and safely handles regex replacement', () => {
   assert.equal(L.applyFieldTransforms('  padded  ', ['trim']), 'padded');
-  assert.equal(L.applyFieldTransforms('Price: $19.99 USD', ['currency']), 19.99);
+  assert.equal(L.applyFieldTransforms('Price: $1,234.56 USD', ['currency']), 1234.56);
   assert.equal(L.applyFieldTransforms('2026-03-14T00:00:00.000Z', ['date']), '2026-03-14');
   assert.equal(L.applyFieldTransforms('ABC-123', [{ type: 'regex_replace', pattern: '\\d+', replacement: '456' }]), 'ABC-456');
+});
+
+await t('schema URL matcher safely handles hostile path patterns', () => {
+  const hostile = { match: { domain: 'example.com', pathPattern: '/blog/*' } };
+  assert.equal(L.schema.matchUrl(hostile, 'https://example.com/blog/test').score, 2);
+  assert.equal(L.schema.matchUrl(hostile, 'https://example.com/other').matches, false);
+  // Unsafe regex metacharacters in glob path pattern are escaped safely
+  const meta = { match: { domain: 'example.com', pathPattern: '/blog/([a-z]+)+$' } };
+  assert.equal(L.schema.matchUrl(meta, 'https://example.com/blog/([a-z]+)+$').score, 3);
+  assert.equal(L.schema.matchUrl(meta, 'https://example.com/blog/test').matches, false);
 });
 
 await t('schema runner replays schema and evaluates health', async () => {

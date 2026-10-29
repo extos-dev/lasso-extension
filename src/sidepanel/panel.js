@@ -381,25 +381,13 @@ async function saveSchema() {
   if (!state.result || !state.tab) return;
   const tabId = state.tab.id;
   try {
-    let container = {};
-    if (state.selectedId !== null && state.selectedId !== undefined) {
-      const buildRes = await send(tabId, 'SCHEMA_BUILD', { nodeId: state.selectedId });
-      if (buildRes && buildRes.container) container = buildRes.container;
-    }
-    const id = 'schema_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
-    const hostname = state.light?.hostname || '';
-    const schema = {
-      schemaVersion: 1,
-      id,
-      name: (state.result.kind ? state.result.kind.charAt(0).toUpperCase() + state.result.kind.slice(1) : 'Recipe') + ' (' + hostname + ')',
-      origin: 'manual',
-      match: { domain: hostname, pathPattern: state.tab.url ? new URL(state.tab.url).pathname : '' },
-      kind: state.result.kind || 'text',
-      container,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
-    await bg('SCHEMA_SAVE', { schema });
+    const buildRes = await send(tabId, 'SCHEMA_BUILD', {
+      nodeId: state.selectedId,
+      result: state.result,
+      meta: { name: (state.result.kind ? state.result.kind.charAt(0).toUpperCase() + state.result.kind.slice(1) : 'Recipe') + ' (' + (state.light?.hostname || '') + ')' }
+    });
+    if (!buildRes || !buildRes.schema) throw new Error('Failed to generate schema from result');
+    await bg('SCHEMA_SAVE', { schema: buildRes.schema });
     notice('Schema saved.');
     setTimeout(() => notice(null), 2000);
     stage0();

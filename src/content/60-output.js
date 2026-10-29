@@ -108,7 +108,8 @@
     strip_tags: (v) => (v == null ? '' : String(v).replace(/<[^>]*>/g, '')),
     currency: (v) => {
       if (v == null) return '';
-      const m = String(v).match(/\b\d+(?:[.,]\d+)?\b/);
+      // Correctly parses '1,234.56' -> 1234.56
+      const m = String(v).match(/[\d,]+\.?\d*/);
       return m ? parseFloat(m[0].replace(/,/g, '')) : '';
     },
     date: (v) => {
@@ -127,10 +128,13 @@
       if (typeof t === 'function') res = t(res);
       else if (typeof t === 'string' && TRANSFORMS[t]) res = TRANSFORMS[t](res);
       else if (t && typeof t === 'object' && t.type === 'regex_replace') {
-        try {
-          const re = new RegExp(t.pattern, t.flags || 'g');
-          res = String(res || '').replace(re, t.replacement || '');
-        } catch (_) {}
+        // Enforce max pattern length (100) to prevent ReDoS / hostile expressions
+        if (typeof t.pattern === 'string' && t.pattern.length <= 100) {
+          try {
+            const re = new RegExp(t.pattern, 'g');
+            res = String(res || '').replace(re, String(t.replacement || '').slice(0, 100));
+          } catch (_) {}
+        }
       }
     }
     return res;

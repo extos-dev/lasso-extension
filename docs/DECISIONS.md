@@ -2,6 +2,10 @@
 
 Format: **ID · decision** — context, alternatives considered, consequences.
 
+**D-027 · Replay uses saved locators directly instead of re-detecting.** Context: Milestone B schema replay previously re-ran detector pattern detection (`detectPatterns`), which violated the requirement for deterministic replay using saved locators. Decision: Implemented `L.schema.buildSchemaFromResult` to extract and persist `container`, `item` locators, and `fields` array during schema creation. Replay (`L.schema.run`) now resolves locators directly against the page snapshot, checks signature match, applies field transforms, and calculates health per spec §8 (required fields, locator strategy tier, item count drift >20%). Consequences: Replay is 100% deterministic and independent of detector heuristics.
+
+**D-028 · Glob path pattern escaping & input sanitization.** Context: `matchSchemaUrl` built dynamic Regular Expressions from stored schema `pathPattern` strings without escaping special regex characters. Decision: Implemented custom glob-to-RegExp converter (`globToRegExp`) that safely escapes all metacharacters while supporting `*` and `:param` wildcards, with strict 200-character caps. Consequences: Protects URL matching against ReDoS and hostile string evaluation.
+
 **D-001 · Single standard Chrome extension, no monorepo.** Context: a solo builder gains nothing from `core`/`extension` packages while the engine has one consumer. Alternatives: pnpm workspace with a publishable core (earlier plan). Consequence: simpler repo, load-unpacked works; reusability is preserved by layering rules (engine files never touch `chrome.*` except overlay/bridge), so a future split is mechanical.
 
 **D-002 · Engine as classic scripts in numbered layers, injected on demand.** Alternatives: ES modules (needs `web_accessible_resources`, exposing extension files to every site); a bundler (adds a build step and tooling). Consequence: no build, no exposure; files share one namespace, so layering discipline and a unit-tested file list are required.

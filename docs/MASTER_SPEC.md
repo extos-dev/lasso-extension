@@ -166,7 +166,7 @@ JSON (stable shape per kind), CSV (RFC 4180, CRLF, optional BOM added by the pan
   "lastRun": { "at": 0, "health": "healthy|degraded|broken", "matched": { "title": 1 } }
 }
 ```
-**Locator strategies, tried in order, each verified against the signature:** semantic/ARIA → stable attribute (`data-*`, `itemprop`, `id`) → CSS built from *stable* tokens → structural path → text signature. Hashed/CSS-in-JS classes are never used. **Health:** healthy = all required fields resolved with the primary strategy; degraded = resolved only via fallback or count drift >20%; broken = a required field missing. **Healing:** re-run detection in the schema's container neighbourhood, propose a new locator set with a diff, apply only on user acceptance.
+**Locator strategies, tried in order, each verified against the signature:** semantic/ARIA → stable attribute (`data-*`, `itemprop`, `id`) → CSS built from *stable* tokens → structural path → text signature. Attribute and selector values are escaped with `CSS.escape`. Candidates are verified against `locatorSet.signature` (checking tag + text hash/prefix, whitespace/case tolerant) to prevent matching wrong regions on pages with duplicate semantic structures. **Replay:** `L.schema.run` resolves saved `container`, `item`, and `fields` locators directly without re-running pattern auto-detection. **Health:** healthy = container and all required fields resolved with the primary strategy and item drift ≤20%; degraded = resolved via fallback strategy or item count drift >20%; broken = required container or field missing/unresolvable. **Healing:** re-run detection in the schema's container neighbourhood, propose a new locator set with a diff, apply only on user acceptance.
 
 ## 9. Message protocol
 
