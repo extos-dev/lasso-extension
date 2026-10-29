@@ -57,6 +57,7 @@ function structuralKey() {
     state.catalog, state.results, state.result, state.rendered,
     state.outputItems, state.expandedResults, state.format, state.bom,
     state.pageSiteType, state.pageRecipes, state.pageScanResults, state.pageScanItems, state.pageScanExpanded, state.pageScanBusy,
+    state.scanConfigOpen, state.selectingScanParent, state.scanScope, state.scanScopeLabel, state.scanPatterns,
   ]);
 }
 
@@ -416,6 +417,20 @@ function onPageMessage(m, sender) {
   if (sender && sender.tab && state.tab && sender.tab.id !== state.tab.id) return;
   if (m.type === 'NODE_SELECTED') {
     if (!state.inspect || !state.inspect.active) return;
+    if (state.selectingScanParent) {
+      set({
+        scanScope: m.selectedId,
+        scanScopeLabel: m.selected?.label || String(m.selectedId),
+        selectingScanParent: false,
+        selectedId: m.selectedId,
+        selected: m.selected,
+        breadcrumb: m.breadcrumb || [],
+      });
+      if (state.tab) { scanSetScope(state.tab.id, m.selectedId).catch(() => {}); }
+      notice('Parent node selected for scanning.');
+      setTimeout(() => notice(null), 1500);
+      return;
+    }
     const ready = !!m.patternsReady;
     set({
       selectedId: m.selectedId, selected: m.selected, hoverId: null, breadcrumb: m.breadcrumb || [], patterns: m.patterns || [],
@@ -446,6 +461,16 @@ const actions = {
   async toggleInspect() {
     if (state.inspect && state.inspect.active) return stopInspect();
     return startInspect();
+  },
+  toggleScanConfig() {
+    set({ scanConfigOpen: !state.scanConfigOpen });
+  },
+  async selectParentNode() {
+    set({ selectingScanParent: true });
+    notice('Click any element on the page to set as scan parent node.');
+    if (!state.inspect || !state.inspect.active) {
+      await startInspect();
+    }
   },
   scanAllPage: () => scanAllPageAction(),
   toggleScanPattern(id, checked) {

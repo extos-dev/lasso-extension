@@ -6,8 +6,10 @@ export const state = {
   patterns: [], patternsReady: false, catalog: [], patternPick: ['text'], results: [], outputItems: [], expandedResults: [], result: null, rendered: null,
   format: 'markdown', bom: true, busy: false, error: null, view: 'page',
   pageSiteType: null, pageRecipes: [], pageScanResults: [], pageScanItems: [], pageScanExpanded: [], pageScanBusy: false, pageScanFormat: 'markdown',
-  scanScope: null,
+  scanScope: null, scanScopeLabel: null,
   scanPatterns: ['article', 'table', 'list', 'text'],
+  scanConfigOpen: false,
+  selectingScanParent: false,
 };
 export const subscribe = (fn) => { listeners.add(fn); return () => listeners.delete(fn); };
 export const set = (patch) => { Object.assign(state, patch); for (const fn of listeners) fn(state); };
