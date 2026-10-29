@@ -13,7 +13,11 @@ export const CONTENT_FILES = [
   'src/content/40-arbitrate.js',
   'src/content/50-classify.js',
   'src/content/60-output.js',
+  'src/content/70-locator.js',
   'src/content/70-overlay.js',
+  'src/content/75-induce.js',
   'src/content/80-pipeline.js',
+  'src/content/80-run.js',
+  'src/content/85-compile.js',
   'src/content/90-bridge.js',
 ];

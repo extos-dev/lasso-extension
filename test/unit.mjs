@@ -421,4 +421,106 @@ await t('every file referenced by the manifest exists', () => {
   const refs = [m.side_panel.default_path, m.background.service_worker, ...Object.values(m.icons), ...Object.values(m.action.default_icon)];
   for (const r of refs) assert.ok(fs.existsSync(path.join(root, r)), r);
 });
+
+await t('makeLocator and resolveLocator support anchors, css, path, fingerprint and shadow DOM', async () => {
+  const w2 = await load('<body><main id="main"><div class="card" data-testid="card-1"><h2>Card Title</h2><p class="price">$19.99</p></div></main></body>');
+  const cardEl = w2.document.querySelector('.card');
+  const loc = w2.Lasso.makeLocator(cardEl);
+  assert.equal(loc.anchors.testid, 'card-1');
+  assert.ok(loc.css.includes('card'));
+  assert.ok(loc.path.includes('DIV'));
+  assert.equal(loc.fingerprint.tag, 'DIV');
+
+  // Resolve by anchors
+  const res1 = w2.Lasso.resolveLocator(loc, w2.document);
+  assert.equal(res1.el, cardEl);
+  assert.equal(res1.strategy, 'anchor');
+  assert.ok(res1.confidence >= 0.9);
+
+  // Resolve without anchors using css
+  const noAnchorLoc = { ...loc, anchors: { id: null, testid: null, aria: null, role: null } };
+  const res2 = w2.Lasso.resolveLocator(noAnchorLoc, w2.document);
+  assert.equal(res2.el, cardEl);
+  assert.equal(res2.strategy, 'css');
+
+  // Resolve without anchors or css using path
+  const noCssLoc = { ...noAnchorLoc, css: '' };
+  const res3 = w2.Lasso.resolveLocator(noCssLoc, w2.document);
+  assert.equal(res3.el, cardEl);
+  assert.equal(res3.strategy, 'path');
+
+  // Resolve without anchors, css or path using fingerprint
+  const fpOnlyLoc = { fingerprint: loc.fingerprint };
+  const res4 = w2.Lasso.resolveLocator(fpOnlyLoc, w2.document);
+  assert.equal(res4.el, cardEl);
+  assert.equal(res4.strategy, 'fingerprint');
+  assert.ok(res4.confidence >= 0.5);
+
+  // Shadow DOM resolution
+  const host = w2.document.createElement('div');
+  w2.document.body.appendChild(host);
+  const shadow = host.attachShadow({ mode: 'open' });
+  shadow.innerHTML = '<button class="shadow-btn">Click</button>';
+  const shadowBtn = shadow.querySelector('.shadow-btn');
+  const shadowLoc = w2.Lasso.makeLocator(shadowBtn);
+  const resShadow = w2.Lasso.resolveLocator(shadowLoc, w2.document);
+  assert.equal(resShadow.el, shadowBtn);
+});
+
+await t('induce.fromSamples computes LCA, item selector, and field alignments', async () => {
+  const w2 = await load('<body><section id="grid"><div class="item"><h3>Product A</h3><span class="price">$10</span><a href="/a">Link A</a></div><div class="item"><h3>Product B</h3><span class="price">$20</span><a href="/b">Link B</a></div></section></body>');
+  const items = Array.from(w2.document.querySelectorAll('.item'));
+  const induced = w2.Lasso.induce.fromSamples(items);
+  assert.equal(induced.scopeEl, w2.document.getElementById('grid'));
+  assert.equal(induced.itemCss, 'div.item');
+  assert.ok(induced.fields.title);
+  assert.ok(induced.fields.price);
+  assert.ok(induced.fields.link);
+});
+
+await t('compileCandidate builds serializable extraction objects for all patterns', async () => {
+  const w2 = await load('<body><div id="scope"><div class="item"><h3>A</h3></div><div class="item"><h3>B</h3></div></div></body>');
+  const scope = w2.document.getElementById('scope');
+  const extRecords = w2.Lasso.compileCandidate('records', {}, scope);
+  assert.equal(extRecords.version, 1);
+  assert.equal(extRecords.pattern, 'records');
+  assert.ok(extRecords.scope);
+  assert.ok(extRecords.item);
+
+  const jsonStr = JSON.stringify(extRecords);
+  assert.ok(!jsonStr.includes('[object HTML'));
+
+  const extArticle = w2.Lasso.compileCandidate('article', { title: 'Test Title' }, scope);
+  assert.equal(extArticle.pattern, 'article');
+  assert.equal(extArticle.title, 'Test Title');
+
+  const extTable = w2.Lasso.compileCandidate('table', {}, scope);
+  assert.equal(extTable.pattern, 'table');
+
+  const extChat = w2.Lasso.compileCandidate('chat', {}, scope);
+  assert.equal(extChat.pattern, 'chat');
+
+  const extContact = w2.Lasso.compileCandidate('contact', {}, scope);
+  assert.equal(extContact.pattern, 'contact');
+
+  const extText = w2.Lasso.compileCandidate('text', {}, scope);
+  assert.equal(extText.pattern, 'text');
+});
+
+await t('runExtraction executes extractions on live DOM without snapshot node IDs', async () => {
+  const w2 = await load('<body><div id="grid">' +
+    '<div class="item"><h3>Item One</h3><span class="price">$10</span><a href="/one">View One</a></div>' +
+    '<div class="item"><h3>Item Two</h3><span class="price">$20</span><a href="/two">View Two</a></div>' +
+    '</div></body>');
+  const extraction = w2.Lasso.compileCandidate('records', {}, w2.document.getElementById('grid'));
+
+  const result = w2.Lasso.runExtraction(extraction, w2.document);
+  assert.equal(result.ok, true);
+  assert.equal(result.count, 2);
+  assert.equal(result.rows[0].title, 'Item One');
+  assert.equal(result.rows[0].price, '$10');
+  assert.ok(result.rows[0].link.includes('/one'));
+  assert.equal(result.rows[1].title, 'Item Two');
+});
+
 console.log(`unit: ${n} passed`);
