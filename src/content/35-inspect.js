@@ -176,7 +176,10 @@
       if (navLike) return { ok: false, reason: 'looks like navigation' };
     }
     const flavor = g.fields.price >= .5 ? 'product' : g.fields.date >= .5 && g.fields.heading >= .5 ? 'post' : g.fields.link >= .6 && g.fields.heading >= .5 ? 'result' : 'generic';
-    return { ok: true, nodeId: g.parentId, itemIds: g.itemIds.slice(), reason: `${g.itemIds.length} items`, meta: { count: g.itemIds.length, flavor, scoped: opts.scoped } };
+    const matchedCount = g.itemIds.length;
+    const listParent = get(g.parentId);
+    const totalChildren = listParent && listParent.children ? listParent.children.length : matchedCount;
+    return { ok: true, nodeId: g.parentId, itemIds: g.itemIds.slice(), reason: `${matchedCount} of ${totalChildren} matched`, meta: { count: matchedCount, totalChildren, flavor, scoped: opts.scoped } };
   }
 
   function textFor(startId) {

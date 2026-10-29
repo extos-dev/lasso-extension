@@ -17,6 +17,9 @@
     if (s.match.pathPattern && (typeof s.match.pathPattern !== 'string' || s.match.pathPattern.length > 200)) return { valid: false, reason: 'Match pathPattern must be a string <= 200 chars' };
     if (typeof s.kind !== 'string' || !['article', 'table', 'record_list', 'chat', 'contact', 'text'].includes(s.kind)) return { valid: false, reason: 'Invalid or missing kind: ' + s.kind };
     if (!s.container || typeof s.container !== 'object') return { valid: false, reason: 'Schema missing container locator' };
+    if (s.fields && (!Array.isArray(s.fields) || s.fields.some((f) => !f || typeof f.name !== 'string'))) {
+      return { valid: false, reason: 'Fields must be an array of objects with a string name' };
+    }
     return { valid: true };
   }
 

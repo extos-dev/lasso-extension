@@ -102,6 +102,42 @@
   L.toCsv = toCsv;
   const tokens = (s) => Math.ceil(s.length / 4);
 
+  /** Modular Field Transforms for cleaning data strings. */
+  const TRANSFORMS = {
+    trim: (v) => (v == null ? '' : String(v).trim()),
+    strip_tags: (v) => (v == null ? '' : String(v).replace(/<[^>]*>/g, '')),
+    currency: (v) => {
+      if (v == null) return '';
+      const m = String(v).match(/\b\d+(?:[.,]\d+)?\b/);
+      return m ? parseFloat(m[0].replace(/,/g, '')) : '';
+    },
+    date: (v) => {
+      if (!v) return '';
+      const d = new Date(v);
+      return isNaN(d.getTime()) ? String(v) : d.toISOString().split('T')[0];
+    },
+    uppercase: (v) => (v == null ? '' : String(v).toUpperCase()),
+    lowercase: (v) => (v == null ? '' : String(v).toLowerCase()),
+  };
+
+  function applyFieldTransforms(val, transforms) {
+    if (!Array.isArray(transforms) || !transforms.length) return val;
+    let res = val;
+    for (const t of transforms) {
+      if (typeof t === 'function') res = t(res);
+      else if (typeof t === 'string' && TRANSFORMS[t]) res = TRANSFORMS[t](res);
+      else if (t && typeof t === 'object' && t.type === 'regex_replace') {
+        try {
+          const re = new RegExp(t.pattern, t.flags || 'g');
+          res = String(res || '').replace(re, t.replacement || '');
+        } catch (_) {}
+      }
+    }
+    return res;
+  }
+  L.applyFieldTransforms = applyFieldTransforms;
+  L.fieldTransforms = TRANSFORMS;
+
   /** Structured data for a region (shared by all formats). */
   function dataFor(an, region) {
     const { snap } = an, n = snap.nodes[region.nodeId];

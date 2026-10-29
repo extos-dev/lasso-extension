@@ -369,6 +369,13 @@ await t('schema URL matcher ranks exact path over domain match', () => {
   assert.equal(L.schema.matchUrl(sPath, 'https://example.com/about').matches, false);
 });
 
+await t('applyFieldTransforms applies trim, currency, date, and regex replacement', () => {
+  assert.equal(L.applyFieldTransforms('  padded  ', ['trim']), 'padded');
+  assert.equal(L.applyFieldTransforms('Price: $19.99 USD', ['currency']), 19.99);
+  assert.equal(L.applyFieldTransforms('2026-03-14T00:00:00.000Z', ['date']), '2026-03-14');
+  assert.equal(L.applyFieldTransforms('ABC-123', [{ type: 'regex_replace', pattern: '\\d+', replacement: '456' }]), 'ABC-456');
+});
+
 await t('schema runner replays schema and evaluates health', async () => {
   const w = await load(fs.readFileSync(path.join(here, 'fixtures/article-semantic.html'), 'utf8'));
   w.Lasso.inspect.start();
